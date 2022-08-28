@@ -21,8 +21,8 @@ int main()
     //As they are part of vector function, all functions must have only one variable
     //Further instructions, on how to write functions, can be found in this repository: https://github.com/LukasDubsik/FunctionCreator.git
     Function func1 = Function("var(;t;)", vector<string> {"t"}); //declaring the class
-    Function func2 = Function("div(;var(;t;);con(;4;);)", vector<string> {"t"}); //declaring the class
-    Function func3 = Function("dec(;mul(;var(;t;);con(;3;););con(;1;);)", vector<string> {"t"}); //declaring the class
+    Function func2 = Function("con(;0;)", vector<string> {"t"}); //declaring the class
+    Function func3 = Function("con(;0;)", vector<string> {"t"}); //declaring the class
     
     vector<Function> functions1 {func1, func2, func3};
     
@@ -31,8 +31,8 @@ int main()
     
     //Genes to define begging cap and ending cap of prokaryote
     //The definition, on what should be included, can be found in prokaryote_body_gene header
-    unique_ptr<EndBodyPartGene> gene_begin(new EndBodyPartGene(funcv1, 0.100, 5, { 1.000, 0.100, 1.000 }, 30, 0.9, "begin"));
-    unique_ptr<EndBodyPartGene> gene_end(new EndBodyPartGene(funcv1, 0.100, 4, { 1.000, 0.100, 1.000 }, 30, 0.9, "end"));
+    unique_ptr<EndBodyPartGene> gene_begin(new EndBodyPartGene(funcv1, 0.100, 10, { 1.000, 0.100, 1.000 }, 30, "begin"));
+    unique_ptr<EndBodyPartGene> gene_end(new EndBodyPartGene(funcv1, 0.100, 10, { 1.000, 0.100, 1.000 }, 30, "end"));
     
     //main body gene is defined (there can be more of them, but here only one) with capping (begin/end) genes converted to main, as this format 
     //is the only that can be inserted to connecting functions

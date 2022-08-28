@@ -2,13 +2,30 @@
 #include "export.h"
 
 //Values to export in object blender creation
-vector<string> blender_includes = { "import bpy" };
+vector<string> blender_includes = { "import bpy", "import math"};
 
 vector<string> point_cloud_function = { "def point_cloud(ob_name, coords, edges=[], faces=[]):",
 "    me = bpy.data.meshes.new(ob_name + 'Mesh')",
 "    ob = bpy.data.objects.new(ob_name, me)",
 "    me.from_pydata(coords, edges, faces)",
 "    ob.show_name = True", "    me.update()", "    return ob" };
+
+vector<string> select_object = { "obj = bpy.data.objects['prokaryote_body']",
+"bpy.context.view_layer.objects.active = bpy.data.objects['prokaryote_body']",
+"bpy.ops.object.mode_set(mode = 'EDIT')",
+"bpy.ops.mesh.select_mode(type = 'VERT')",
+"bpy.ops.mesh.select_all(action = 'DESELECT')",
+"bpy.ops.object.mode_set(mode = 'OBJECT')"};
+
+vector<string> vertices_merge = { "bpy.ops.object.mode_set(mode = 'EDIT')",
+"bpy.ops.mesh.merge(type = 'CENTER')",
+"bpy.ops.mesh.select_all(action = 'DESELECT')",
+"bpy.ops.object.mode_set(mode = 'OBJECT')"};
+
+vector<string> object_smooth = { "obj.select_set(True)",
+"obj.data.use_auto_smooth = 1",
+"obj.data.auto_smooth_angle = math.pi / 6",
+"bpy.ops.object.shade_smooth()"};
 
 string point_cloud = "pc = point_cloud(";
 
@@ -98,7 +115,7 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 			if (distance < closest_distance) { closest_distance = distance; closest = j; }
 
 		}
-		cout << closest + assembly.elipses[1]->points.size();
+		
 		closestt = closest;
 		if (Distance(assembly.elipses[i]->points[1], assembly.elipses[i + 1]->points[ChoosePosition(assembly.elipses[i + 1]->points.size(), closest + 1)]) <=
 			Distance(assembly.elipses[i]->points[1], assembly.elipses[i + 1]->points[ChoosePosition(assembly.elipses[i + 1]->points.size(), closest - 1)])) {
@@ -155,6 +172,26 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 	blender_file << object_creation + "\n";
 	blender_file << "\n";
 	blender_file << link_object + "\n";
+
+	for (string line : select_object) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
+	string for_loop = "for i in range(0, " + to_string(assembly.elipses[0]->points.size())  +"):";
+	blender_file << for_loop + "\n";
+	blender_file << "    obj.data.vertices[i].select = True" + std::string("\n");
+
+	for (string line : vertices_merge) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
+	for_loop = "for i in range(" + to_string(assembly.elipses.size() * assembly.elipses[assembly.elipses.size() - 1]->points.size() - assembly.elipses[0]->points.size() - 59) + "," + to_string(assembly.elipses.size() * assembly.elipses[assembly.elipses.size() - 1]->points.size() - 59) + "):";
+	blender_file << for_loop + "\n";
+	blender_file << "    obj.data.vertices[i].select = True" + std::string("\n");
+
+	for (string line : vertices_merge) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
+	for (string line : object_smooth) { blender_file << line + "\n"; }
+	blender_file << "\n";
 
 	blender_file.close();
 

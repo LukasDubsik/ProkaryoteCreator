@@ -44,14 +44,11 @@ public:
 	vector<double> elipse_value;
 	//Number of points per elipse, higher the number the longer generation takes, but bacterioa look "smoother"
 	int resolution;
-
-	//Multiplier to adjust the axis shring to create the "cap" of prokaryote
-	double multiplier;
 	//Begin or end position
 	string position;
 
 	EndBodyPartGene(shared_ptr<VectorFunction> function, double distance, int number_points,
-		vector<double> elipses_values, int resolution, double multiplier, string position);
+		vector<double> elipses_values, int resolution, string position);
 
 };
 
