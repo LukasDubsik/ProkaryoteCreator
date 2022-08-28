@@ -16,11 +16,13 @@ class MainBodyPartGene
 public:
 	//Function defining outline of body points
 	shared_ptr<VectorFunction> function;
-	//Start point of function and distance of points
+	//distance between individual points on the function
 	double distance;
-	//Other important values
+	//Number of elipses to be present
 	int number_points;
+	//Vector of elipses values, which are 1. length of a axis 2. angle of a axis from baseline 3. length of b axis
 	vector<vector<double>> elipses_values;
+	//Number of points per elipse, higher the number the longer generation takes, but bacterioa look "smoother"
 	int resolution;
 
 	MainBodyPartGene(shared_ptr<VectorFunction> function, double distance, int number_points,
@@ -33,15 +35,19 @@ class EndBodyPartGene
 public:
 	//Function defining outline of body points
 	shared_ptr<VectorFunction> function;
-	//Start point of function and distance of points
+	//distance between individual points on the function
 	double distance;
-	//Other important values
+	//Number of elipses to be present
 	int number_points;
+	//elipse values, which are 1. length of a axis 2. angle of a axis from baseline 3. length of b axis
+	//This is then duplicated by the number of points to create number of similar, but differing in axis length, elipses
 	vector<double> elipse_value;
+	//Number of points per elipse, higher the number the longer generation takes, but bacterioa look "smoother"
 	int resolution;
 
+	//Multiplier to adjust the axis shring to create the "cap" of prokaryote
 	double multiplier;
-	//Begin or end
+	//Begin or end position
 	string position;
 
 	EndBodyPartGene(shared_ptr<VectorFunction> function, double distance, int number_points,
