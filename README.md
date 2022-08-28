@@ -8,6 +8,6 @@ The full vision of the project will be soon presented in scientific paper, to wh
 ## Testing Prokaryote body creation
 How to use and analyze the current body generation functions is described in src under TestingExport.cpp file. The generated file is named test1.txt and should be present in the same directory as the TestingExport.cpp file (one generated example also present in src directory).
 
-The text from this file can then be copied and pasted into blender's scripting workspace, where after hitting run the body is generated and can be exported.
+The text from this file can then be copied and pasted into blender's scripting workspace, where after hitting run the body is generated and can be exported. Currently, the result is not smoothed, but it can be done by adding shade smooth and clicking auto smooth in normals.
 
-If you find any error, contacting me would be appreciated.
+If you find any error, contacting me would be very appreciated.
