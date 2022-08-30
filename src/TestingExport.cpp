@@ -17,6 +17,9 @@ using namespace std;
 
 int main()
 {
+
+    //cd MaterialCreation && python3 displacement.py
+
     //These functions define vector function which serves as scafold upon which perpendicular elipses, with additional instructions hidden in genes (below), are created
     //As they are part of vector function, all functions must have only one variable
     //Further instructions, on how to write functions, can be found in this repository: https://github.com/LukasDubsik/FunctionCreator.git
@@ -54,7 +57,7 @@ int main()
     //Parts are assembled creating final body conatiner with all parts present in previosly defined order
     ProkaryoteBodyContainer assembly = AssembleParts(move(parts));
     
-    //assembly is exported, creating tesrt1.txt file to be used in blender to visualize the result.
+    //assembly is exported, creating test1.txt file to be used in blender to visualize the result.
     ExportToBlender(move(assembly), "C:", "test1.txt");
 
     return 0;
