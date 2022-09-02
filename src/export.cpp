@@ -210,46 +210,4 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 
 	blender_file.close();
 
-	//Saved code for further polishing
-
-	//system('move'+' ' + file_name.c_str() + ' ' + 'C:\\U'+'sers' + '\\ - ' + '\\Des'+ 'ktop');
-
-	/*fstream blender_file;
-	blender_file.open(export_path + "\\prokaryote.py", ios::out);
-
-	for (string line : blender_includes) { blender_file << line + "\n"; }
-	blender_file << "\n";
-	for (string line : point_cloud_function) { blender_file << line + "\n"; }
-	blender_file << "\n";
-
-	string object_creation = point_cloud + point_cloud_name + ", ";
-	object_creation += "[";
-
-    for (int i = 0; i < assembly.elipses.size(); i++)
-    {
-        for (int j = 0; j < assembly.elipses[i]->points.size(); j++)
-        {
-            object_creation += "(" + to_string(assembly.elipses[i]->points[j][0]) + ", " + 
-				to_string(assembly.elipses[i]->points[j][1]) + ", " + to_string(assembly.elipses[i]->points[j][2]) + "), ";
-        }
-    }
-	object_creation += "])";
-
-	blender_file << object_creation + "\n";
-	blender_file << "\n";
-	blender_file << link_object + "\n";*/
-
-
-	//double val = FindEndPoint(functions, value, 1, 1);
-
-	//vector<double> points = GetSeparators(funcv, 1, 1, 10);
-
-	//for (double i : points) { cout << i << endl; }
-
-	//Elipse elipse = GetElipsePoints(funcv, 1, 1, 2, { 2.07944, 3, 0.693147 }, 0.5, 3);
-
-	//for (vector<double> i : elipse.points) { cout << i[0] << ", "<< i[1] << ", " << i[2] << endl; }
-
-	//Be wary and use 1.0 instead of 1 and similiraly, as there then divisional error (divisions by zero etc.)
-
 }
