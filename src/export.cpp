@@ -1,6 +1,13 @@
 
 #include "export.h"
 
+std::wstring ExePath() {
+	TCHAR buffer[MAX_PATH] = { 0 };
+	GetModuleFileName(NULL, buffer, MAX_PATH);
+	std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+	return std::wstring(buffer).substr(0, pos);
+}
+
 //Values to export in object blender creation
 vector<string> blender_includes = { "import bpy", "import math"};
 
@@ -56,7 +63,7 @@ int ChoosePosition(int length, int closest)
 	else { return closest; }
 }
 
-void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, string file_name) 
+void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, string file_name, int dimensions, int r_color, int g_color, int b_color) 
 {
 	ofstream blender_file(file_name);
 
@@ -99,7 +106,7 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 	
 	for (int i = 0; i < assembly.elipses.size() - 1; i++)
 	{
-		closest_distance = numeric_limits<float>::max();
+		closest_distance = 1e10;
 		closest = 0;
 
 		if (i == 0){
@@ -184,9 +191,26 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 	for (string line : object_smooth) { blender_file << line + "\n"; }
 	blender_file << "\n";
 
+	//Create materail files (displacement, roughness and base color)
+	auto wstr = ExePath();
+
+	std::string current_directory(wstr.begin(), wstr.end());
+	current_directory.erase(current_directory.length() - 9);
+
+	string displacement = (string)"cd " + current_directory + (string)"\\TestingMath\\MaterialCreation && python3 displacement.py " + to_string(dimensions);
+	string roughness = (string)"cd " + current_directory + (string)"\\TestingMath\\MaterialCreation && python3 roughness.py " + to_string(dimensions);
+	string base_color = (string)"cd " + current_directory + (string)"\\TestingMath\\MaterialCreation && python3 base_color.py " + 
+		to_string(dimensions) + " " + to_string(r_color) + " " + to_string(g_color) + " " + to_string(b_color);
+
+	const char* pointer_displacement = (displacement).c_str(); 
+	const char* pointer_roughness = (roughness).c_str(); 
+	const char* pointer_base_color = (base_color).c_str();
+	
+	system(pointer_displacement); system(pointer_roughness); system(pointer_base_color);
+
 	blender_file.close();
 
-	//Saved coe for further polishing
+	//Saved code for further polishing
 
 	//system('move'+' ' + file_name.c_str() + ' ' + 'C:\\U'+'sers' + '\\ - ' + '\\Des'+ 'ktop');
 

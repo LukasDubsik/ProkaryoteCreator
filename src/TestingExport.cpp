@@ -50,7 +50,7 @@ int main()
 
     //Vector of parts is created, with order determing the order of assembling in export
     vector<ProkaryotePartContainer> parts;
-    parts.emplace_back(move(res1));
+    parts.emplace_back(move(res1)); 
     parts.emplace_back(move(res2));
     parts.emplace_back(move(res3));
 
