@@ -1,6 +1,10 @@
 import bpy
 import math
 
+#Set the viewing scene for the displacement export
+bpy.data.scenes['Scene'].render.engine = 'CYCLES'
+bpy.data.scenes['Scene'].cycles.feature_set = 'EXPERIMENTAL'
+
 #function for construction of the bacterial body
 def point_cloud(ob_name, coords, edges=[], faces=[]):
     me = bpy.data.meshes.new(ob_name + 'Mesh')
@@ -43,8 +47,72 @@ bpy.ops.mesh.select_all(action = 'DESELECT')
 bpy.ops.object.mode_set(mode = 'OBJECT')
 
 #Smooth the surface
+bpy.ops.object.quadriflow_remesh()
 obj.select_set(True)
 obj.data.use_auto_smooth = 1
 obj.data.auto_smooth_angle = math.pi / 6
 bpy.ops.object.shade_smooth()
+
+#Prepare the mesh for matereial addition
+bpy.ops.mesh.uv_texture_add()
+bpy.ops.object.modifier_add(type = 'SUBSURF')
+obj.modifiers['Subdivision'].levels = 5
+obj.modifiers['Subdivision'].render_levels = 5
+
+#Add the material
+mat = bpy.data.materials.new('prokaryote_material')
+mat.use_nodes = True
+mat.cycles.displacement_method = 'BOTH'
+obj.data.materials.append(mat)
+
+#Get the current nodesand links of the added material
+context = bpy.context
+nodes = context.active_object.active_material.node_tree.nodes
+links = context.active_object.active_material.node_tree.links
+base_node = nodes.get('Principled BSDF')
+material_output = nodes.get('Material Output')
+
+# Add base_color node
+base_color = nodes.new('ShaderNodeTexImage')
+base_color.location = (-600, 210)
+base_color.label = 'base_color'
+base_color.image = bpy.data.images.load('C:/Users/-/Desktop/PersonalProjects/SimulatedEvolution/ProkaryoteBody//TestingMath/MaterialCreation/generated_maps/base_color_map.jpg')
+
+# Add roughness node
+roughness = nodes.new('ShaderNodeTexImage')
+roughness.location = (-600, -80)
+roughness.label = 'roughness'
+roughness.image = bpy.data.images.load('C:/Users/-/Desktop/PersonalProjects/SimulatedEvolution/ProkaryoteBody//TestingMath/MaterialCreation/generated_maps/roughness_map.jpg')
+
+# Add displacement node
+displacement = nodes.new('ShaderNodeTexImage')
+displacement.location = (-600, -370)
+displacement.label = 'displacement'
+displacement.image = bpy.data.images.load('C:/Users/-/Desktop/PersonalProjects/SimulatedEvolution/ProkaryoteBody//TestingMath/MaterialCreation/generated_maps/displacement_map.jpg')
+
+# Add displacement converter
+converter = nodes.new('ShaderNodeDisplacement')
+converter.location = (120, -400)
+converter.label = 'Displacement convert'
+converter.inputs[1].default_value = 0
+converter.inputs[2].default_value = 0.020
+# Add textue coordinate node
+texture_coordinate = nodes.new('ShaderNodeTexCoord')
+texture_coordinate.location = (-1100, 100)
+texture_coordinate.label = 'Texture Coordinate'
+# Add mapping node
+mapping = nodes.new('ShaderNodeMapping')
+mapping.location = (-900, 100)
+mapping.label = 'Mapping'
+
+#Link the mapping to all input nodes
+links.new(texture_coordinate.outputs[2], mapping.inputs[0])
+links.new(mapping.outputs[0], base_color.inputs[0])
+links.new(mapping.outputs[0], roughness.inputs[0])
+links.new(mapping.outputs[0], displacement.inputs[0])
+#Link the individual nodes
+links.new(base_color.outputs[0], base_node.inputs[0])
+links.new(roughness.outputs[0], base_node.inputs[9])
+links.new(displacement.outputs[0], converter.inputs[0])
+links.new(converter.outputs[0], material_output.inputs[2])
 

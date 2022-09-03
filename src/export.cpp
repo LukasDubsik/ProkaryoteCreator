@@ -1,19 +1,13 @@
 
 #include "export.h"
 
-std::wstring ExePath() {
-	TCHAR buffer[MAX_PATH] = { 0 };
-	GetModuleFileName(NULL, buffer, MAX_PATH);
-	std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
-	return std::wstring(buffer).substr(0, pos);
-}
-
 //Values to export in object blender creation
-vector<string> blender_includes = { "import bpy", "import math"};
+
+vector<string> blender_includes = { "import bpy", "import math" };
 
 vector<string> setting_scene = { "#Set the viewing scene for the displacement export",
 "bpy.data.scenes['Scene'].render.engine = 'CYCLES'",
-"bpy.data.scenes['Scene'].cycles.feature_set = 'EXPERIMENTAL'"};
+"bpy.data.scenes['Scene'].cycles.feature_set = 'EXPERIMENTAL'" };
 
 vector<string> point_cloud_function = { "#function for construction of the bacterial body",
 	"def point_cloud(ob_name, coords, edges=[], faces=[]):",
@@ -29,18 +23,64 @@ vector<string> select_object = { "#make the mesh active",
 "bpy.ops.object.mode_set(mode = 'EDIT')",
 "bpy.ops.mesh.select_mode(type = 'VERT')",
 "bpy.ops.mesh.select_all(action = 'DESELECT')",
-"bpy.ops.object.mode_set(mode = 'OBJECT')"};
+"bpy.ops.object.mode_set(mode = 'OBJECT')" };
 
 vector<string> vertices_merge = { "bpy.ops.object.mode_set(mode = 'EDIT')",
 "bpy.ops.mesh.merge(type = 'CENTER')",
 "bpy.ops.mesh.select_all(action = 'DESELECT')",
-"bpy.ops.object.mode_set(mode = 'OBJECT')"};
+"bpy.ops.object.mode_set(mode = 'OBJECT')" };
 
 vector<string> object_smooth = { "#Smooth the surface",
+"bpy.ops.object.quadriflow_remesh()",
 "obj.select_set(True)",
 "obj.data.use_auto_smooth = 1",
 "obj.data.auto_smooth_angle = math.pi / 6",
-"bpy.ops.object.shade_smooth()"};
+"bpy.ops.object.shade_smooth()" };
+
+vector<string> prepare_mesh = { "#Prepare the mesh for matereial addition",
+"bpy.ops.mesh.uv_texture_add()",
+"bpy.ops.object.modifier_add(type = 'SUBSURF')",
+"obj.modifiers['Subdivision'].levels = 5",
+"obj.modifiers['Subdivision'].render_levels = 5"};
+
+vector<string> add_material = { "#Add the material",
+"mat = bpy.data.materials.new('prokaryote_material')",
+"mat.use_nodes = True",
+"mat.cycles.displacement_method = 'BOTH'",
+"obj.data.materials.append(mat)" };
+
+vector<string> set_nodes = { "#Get the current nodesand links of the added material",
+"context = bpy.context",
+"nodes = context.active_object.active_material.node_tree.nodes",
+"links = context.active_object.active_material.node_tree.links",
+"base_node = nodes.get('Principled BSDF')",
+"material_output = nodes.get('Material Output')" };
+
+vector<string> additional_nodes = { "# Add displacement converter",
+"converter = nodes.new('ShaderNodeDisplacement')",
+"converter.location = (120, -400)",
+"converter.label = 'Displacement convert'",
+"converter.inputs[1].default_value = 0",
+"converter.inputs[2].default_value = 0.020",
+"# Add textue coordinate node",
+"texture_coordinate = nodes.new('ShaderNodeTexCoord')",
+"texture_coordinate.location = (-1100, 100)",
+"texture_coordinate.label = 'Texture Coordinate'",
+"# Add mapping node",
+"mapping = nodes.new('ShaderNodeMapping')",
+"mapping.location = (-900, 100)",
+"mapping.label = 'Mapping'" };
+
+vector<string> link_nodes = { "#Link the mapping to all input nodes",
+"links.new(texture_coordinate.outputs[2], mapping.inputs[0])",
+"links.new(mapping.outputs[0], base_color.inputs[0])",
+"links.new(mapping.outputs[0], roughness.inputs[0])",
+"links.new(mapping.outputs[0], displacement.inputs[0])",
+"#Link the individual nodes",
+"links.new(base_color.outputs[0], base_node.inputs[0])",
+"links.new(roughness.outputs[0], base_node.inputs[9])",
+"links.new(displacement.outputs[0], converter.inputs[0])",
+"links.new(converter.outputs[0], material_output.inputs[2])" };
 
 string point_cloud_comment = "#Create the collection of points, lines and planes";
 string point_cloud = "pc = point_cloud(";
@@ -49,6 +89,13 @@ string point_cloud_name = "'prokaryote_body'";
 
 string link_object_comment = "#Link the the collection to the scene";
 string link_object = "bpy.context.collection.objects.link(pc)";
+
+std::wstring ExePath() {
+	TCHAR buffer[MAX_PATH] = { 0 };
+	GetModuleFileName(NULL, buffer, MAX_PATH);
+	std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+	return std::wstring(buffer).substr(0, pos);
+}
 
 double Distance(vector<double> a, vector<double> b)
 {
@@ -63,11 +110,24 @@ int ChoosePosition(int length, int closest)
 	else { return closest; }
 }
 
+vector<string> CreateShaderNode(int x, int y, string name, string path)
+{
+	string comment = "# Add " + name + " node";
+	string node = name + " = nodes.new('ShaderNodeTexImage')";
+	string location = name + ".location = (" + to_string(x) + ", " + to_string(y) + ")";
+	string label = name + ".label = '" + name + "'";
+	string image = name + ".image = bpy.data.images.load('" + path + "')";
+
+	return { comment, node, location, label, image };
+}
+
 void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, string file_name, int dimensions, int r_color, int g_color, int b_color) 
 {
 	ofstream blender_file(file_name);
 
 	for (string line : blender_includes) { blender_file << line + "\n"; }
+	blender_file << "\n";
+	for (string line : setting_scene) { blender_file << line + "\n"; }
 	blender_file << "\n";
 	for (string line : point_cloud_function) { blender_file << line + "\n"; }
 	blender_file << "\n";
@@ -197,16 +257,57 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 	std::string current_directory(wstr.begin(), wstr.end());
 	current_directory.erase(current_directory.length() - 9);
 
+	remove((current_directory + (string)"\\TestingMath\\MaterialCreation\\generated_maps\\base_color_map.jpg").c_str());
+	remove((current_directory + (string)"\\TestingMath\\MaterialCreation\\generated_maps\\roughness_map.jpg").c_str());
+	remove((current_directory + (string)"\\TestingMath\\MaterialCreation\\generated_maps\\displacement_map.jpg").c_str());
+
+	//System Path
 	string displacement = (string)"cd " + current_directory + (string)"\\TestingMath\\MaterialCreation && python3 displacement.py " + to_string(dimensions);
 	string roughness = (string)"cd " + current_directory + (string)"\\TestingMath\\MaterialCreation && python3 roughness.py " + to_string(dimensions);
 	string base_color = (string)"cd " + current_directory + (string)"\\TestingMath\\MaterialCreation && python3 base_color.py " + 
 		to_string(dimensions) + " " + to_string(r_color) + " " + to_string(g_color) + " " + to_string(b_color);
 
+	//Convert to const char pointer
 	const char* pointer_displacement = (displacement).c_str(); 
 	const char* pointer_roughness = (roughness).c_str(); 
 	const char* pointer_base_color = (base_color).c_str();
 	
 	system(pointer_displacement); system(pointer_roughness); system(pointer_base_color);
+
+	//Prepare the blender for material addition
+	for (string line : prepare_mesh) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
+	//Add the material
+	for (string line : add_material) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
+	//Prepare for shading
+	for (string line : set_nodes) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
+	//Add the individual nodes
+	//base color
+	string base_color_path = current_directory + (string)"/TestingMath/MaterialCreation/generated_maps/base_color_map.jpg";
+	replace(base_color_path.begin(), base_color_path.end(), '\\', '/');
+	for (string line : CreateShaderNode(-600, 210, "base_color", base_color_path)) { blender_file << line + "\n"; }
+	blender_file << "\n";
+	//roughness
+	string roughness_path = current_directory + (string)"/TestingMath/MaterialCreation/generated_maps/roughness_map.jpg";
+	replace(roughness_path.begin(), roughness_path.end(), '\\', '/');
+	for (string line : CreateShaderNode(-600, -80, "roughness", roughness_path)) { blender_file << line + "\n"; }
+	blender_file << "\n";
+	//displacement
+	string displacement_path = current_directory + (string)"/TestingMath/MaterialCreation/generated_maps/displacement_map.jpg";
+	replace(displacement_path.begin(), displacement_path.end(), '\\', '/');
+	for (string line : CreateShaderNode(-600, -370, "displacement", displacement_path)) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
+	for (string line : additional_nodes) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
+	for (string line : link_nodes) { blender_file << line + "\n"; }
+	blender_file << "\n";
 
 	blender_file.close();
 
