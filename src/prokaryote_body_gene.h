@@ -27,6 +27,8 @@ public:
 
 	MainBodyPartGene(shared_ptr<VectorFunction> function, double distance, int number_points,
 	vector<vector<double>> elipses_values, int resolution);
+	MainBodyPartGene(shared_ptr<VectorFunction> function, double distance, int number_points,
+		vector<double> elipses_values, int resolution);
 
 };
 
@@ -35,11 +37,11 @@ class EndBodyPartGene
 public:
 	//Function defining outline of body points
 	shared_ptr<VectorFunction> function;
-	//distance between individual points on the function
+	//Distance between individual points on the function
 	double distance;
 	//Number of elipses to be present
 	int number_points;
-	//elipse values, which are 1. length of a axis 2. angle of a axis from baseline 3. length of b axis
+	//Elipse values, which are 1. length of a axis 2. angle of a axis from baseline 3. length of b axis
 	//This is then duplicated by the number of points to create number of similar, but differing in axis length, elipses
 	vector<double> elipse_value;
 	//Number of points per elipse, higher the number the longer generation takes, but bacterioa look "smoother"

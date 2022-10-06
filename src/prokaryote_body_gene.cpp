@@ -13,6 +13,17 @@ MainBodyPartGene::MainBodyPartGene(shared_ptr<VectorFunction> function, double d
     this->resolution = resolution;
 }
 
+MainBodyPartGene::MainBodyPartGene(shared_ptr<VectorFunction> function, double distance, int number_points,
+    vector<double> elipses_values, int resolution)
+{
+    this->function = function;
+    this->distance = distance;
+    this->number_points = number_points;
+    vector<vector<double>> values(number_points, elipses_values);
+    this->elipses_values = values;
+    this->resolution = resolution;
+}
+
 EndBodyPartGene::EndBodyPartGene(shared_ptr<VectorFunction> function, double distance, int number_points,
     vector<double> elipse_value, int resolution, string position)
 {

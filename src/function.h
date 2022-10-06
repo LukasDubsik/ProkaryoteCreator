@@ -15,9 +15,11 @@ class Function
 {
 public:
     std::map<string, double> variable_values;
-    std::string function_definition;
 
     Function(std::string function_def, std::vector<std::string> variables);
+
+    string getDefinition();
+    void setDefinition(string function_definition);
 
     double get(map<string, double> variable_val);
     double Integrate(map<string, double> variable_val, string variable_name, double a, double b, int n);
@@ -26,6 +28,7 @@ public:
 private:
     std::vector<std::string> _variables;
     std::vector<std::string> _definition;
+    std::string _function_definition;
     int _definition_length;
 
     void Preprocess();
@@ -63,6 +66,10 @@ public:
 private:
     double CombineValues(double value);
 };
+
+VectorFunction RotateFunction(VectorFunction input_function, double angle, string axis);
+VectorFunction SumFunction(VectorFunction input_function, double value_x, double value_y, double value_z);
+VectorFunction DecrementFunction(VectorFunction input_function, double value_x, double value_y, double value_z);
 
 #endif
 

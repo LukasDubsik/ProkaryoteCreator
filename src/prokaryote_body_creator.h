@@ -40,6 +40,9 @@ public:
     double end_point;
     vector<double> end;
 
+    vector<double> derivative_end = { 0, 0, 0 };
+    double end_angle = 0;
+
     ProkaryotePartContainer(shared_ptr<VectorFunction> function, vector<unique_ptr<Elipse>> elipses, double origin_point, vector<double> origin, double end_point, vector<double> end);
     ProkaryotePartContainer();
 };
@@ -60,15 +63,9 @@ public:
 double FindEndPoint(shared_ptr<VectorFunction> function, double length, double a, int n_iterations = 20, double threshold = 1e-3);
 vector<double> GetSeparators(shared_ptr<VectorFunction> function, double length, double starter_point, int n_points);
 
-//int GetElipseCase(shared_ptr<VectorFunction> functionvector, vector<double> center);
-//vector<vector<double>> DecideElipseIntersect(shared_ptr<VectorFunction> function, double variable_value, double a, double b, vector<double> center, double ai, double bi, double run_a, double run_b);
-
-//vector<double> IntersectElipse(double variable_value, double a, double b, double ai, double bi, double c_1, double c_2, double a_run, double b_run);
-//Elipse GetElipsePoints(shared_ptr<VectorFunction> function, double variable_value, double a, double b, double ai, int number_angles);
-
 ProkaryotePartContainer AssembleContainerBody(unique_ptr<MainBodyPartGene> gene); //Cap is created in the same way, just precise gene
 
-ProkaryotePartContainer ConnectParts(ProkaryotePartContainer prokaryote_part_1, ProkaryotePartContainer prokaryote_part_2, int counter);
+ProkaryotePartContainer ConnectParts(ProkaryotePartContainer prokaryote_part_1, ProkaryotePartContainer prokaryote_part_2, int counter, int run);
 ProkaryoteBodyContainer AssembleParts(vector<ProkaryotePartContainer> prokaryote_parts);
 
 #endif

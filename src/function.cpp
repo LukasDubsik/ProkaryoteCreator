@@ -5,11 +5,15 @@
 Function::Function(std::string function_def, std::vector<std::string> variables)
 {
 	//Initializes private members of Function class
-	function_definition = function_def;
+	_function_definition = function_def;
 	_variables = variables;
 	//Checks validity of given function and adds it to vector for easier evaluation
 	Preprocess();
 };
+
+string Function::getDefinition() { return _function_definition; }
+
+void Function::setDefinition(string function_definition) { _function_definition = function_definition; Preprocess();}
 
 //Gets the value of function for given variables
 double Function::get(map<string, double> variable_val)
@@ -94,6 +98,7 @@ double Function::PartialDerivative(map<string, double> variable_val, string vari
 //Preprocess the string into vector to bve then compiled
 void Function::Preprocess()
 {
+	_definition = {};
 	//Checks that variables are not equal to operators
 	for (string variable : _variables)
 	{
@@ -109,7 +114,7 @@ void Function::Preprocess()
 	int separator_counter = 0;
 
 	// Read definition character by character and check validity
-	for (char character : function_definition)
+	for (char character : _function_definition)
 	{
 		if (character == ';') {
 			//Firstly tries to find if it is constant
@@ -276,7 +281,6 @@ double Function::Func(double value, string oper)
 	return 0;
 }
 
-
 /*From here on definitions for vector function*/
 //Takes the functions necessary for init -> r(t) = f(t) + g(t) + h(t)
 //It is a good practice to name variable t, as it is often used
@@ -317,7 +321,6 @@ double VectorFunction::CombineValues(double value)
 
 double VectorFunction::SizeFunctionValue( double a, double b, int n)
 {
-	
 	if (n % 2 == 0) { n += 1; }
 
 	double h = (b - a) / (n - 1);
@@ -377,4 +380,74 @@ double VectorFunction::ValueToPlane(int type, double v_1, double v_2, double var
 		double final_value = functions[2].get(variable_values) - ((f_part + g_part) / functions[2].PartialDerivative(variable_values, variable_name));
 		return final_value;
 	}
+}
+
+/*Additional functions applicable upon vector functions*/
+//Rotating functions in space
+VectorFunction RotateFunction(VectorFunction input_function, double angle, string axis) 
+{
+	if (axis == "x") 
+	{
+		string sinus = to_string(sin(angle)).substr(0,5); string cosinus = to_string(cos(angle)).substr(0,5);
+		
+		string new_y = "dec(;mul(;con(;" + cosinus + ";);" + input_function.functions[1].getDefinition() + ");mul(;con(;" + sinus + ";);" + input_function.functions[2].getDefinition() + "););";
+		string new_z = "sum(;mul(;con(;" + sinus + ";);" + input_function.functions[1].getDefinition() + ");mul(;con(;" + cosinus + ";);" + input_function.functions[2].getDefinition() + "););";
+
+		input_function.functions[1].setDefinition(new_y);
+		input_function.functions[2].setDefinition(new_z);
+
+		return input_function;
+	}
+	
+	if (axis == "y")
+	{
+		string sinus = to_string(sin(angle)).substr(0, 5); string cosinus = to_string(cos(angle)).substr(0, 5);
+		
+		string new_x = "sum(;mul(;con(;" + cosinus + ";);" + input_function.functions[0].getDefinition() + ");mul(;con(;" + sinus + ";);" + input_function.functions[2].getDefinition() + "););";
+		string new_z = "dec(;mul(;con(;" + cosinus + ";);" + input_function.functions[2].getDefinition() + ");mul(;con(;" + sinus + ";);" + input_function.functions[0].getDefinition() + "););";
+
+		input_function.functions[0].setDefinition(new_x);
+		input_function.functions[2].setDefinition(new_z);
+		
+		return input_function;
+	}
+
+	if (axis == "z")
+	{
+		string sinus = to_string(sin(angle)).substr(0, 5); string cosinus = to_string(cos(angle)).substr(0, 5);
+		
+		string new_x = "dec(;mul(;con(;" + cosinus + ";);" + input_function.functions[0].getDefinition() + ");mul(;con(;" + sinus + ";);" + input_function.functions[1].getDefinition() + "););";
+		string new_y = "sum(;mul(;con(;" + sinus + ";);" + input_function.functions[0].getDefinition() + ");mul(;con(;" + cosinus + ";);" + input_function.functions[1].getDefinition() + "););";
+
+		input_function.functions[0].setDefinition(new_x);
+		input_function.functions[1].setDefinition(new_y);
+		
+		return input_function;
+	}
+}
+
+VectorFunction SumFunction(VectorFunction input_function, double value_x, double value_y, double value_z)
+{
+	string new_x = "sum(;" + input_function.functions[0].getDefinition() + "con(;" + to_string(value_x).substr(0, 5) + ";););";
+	string new_y = "sum(;" + input_function.functions[1].getDefinition() + "con(;" + to_string(value_y).substr(0, 5) + ";););";
+	string new_z = "sum(;" + input_function.functions[2].getDefinition() + "con(;" + to_string(value_z).substr(0, 5) + ";););";
+
+	input_function.functions[0].setDefinition(new_x);
+	input_function.functions[1].setDefinition(new_y);
+	input_function.functions[2].setDefinition(new_z);
+
+	return input_function;
+}
+
+VectorFunction DecrementFunction(VectorFunction input_function, double value_x, double value_y, double value_z)
+{
+	string new_x = "dec(;" + input_function.functions[0].getDefinition() + "con(;" + to_string(value_x).substr(0, 5) + ";););";
+	string new_y = "dec(;" + input_function.functions[1].getDefinition() + "con(;" + to_string(value_y).substr(0, 5) + ";););";
+	string new_z = "dec(;" + input_function.functions[2].getDefinition() + "con(;" + to_string(value_z).substr(0, 5) + ";););";
+
+	input_function.functions[0].setDefinition(new_x);
+	input_function.functions[1].setDefinition(new_y);
+	input_function.functions[2].setDefinition(new_z);
+
+	return input_function;
 }

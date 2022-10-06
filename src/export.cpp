@@ -25,13 +25,18 @@ vector<string> select_object = { "#make the mesh active",
 "bpy.ops.mesh.select_all(action = 'DESELECT')",
 "bpy.ops.object.mode_set(mode = 'OBJECT')" };
 
+vector<string> connect_elipses = {
+	"bpy.ops.object.mode_set(mode = 'EDIT')",
+	"bpy.ops.mesh.bridge_edge_loops()",
+	"bpy.ops.mesh.select_all(action = 'DESELECT')",
+	"bpy.ops.object.mode_set(mode = 'OBJECT')"};
+
 vector<string> vertices_merge = { "bpy.ops.object.mode_set(mode = 'EDIT')",
 "bpy.ops.mesh.merge(type = 'CENTER')",
 "bpy.ops.mesh.select_all(action = 'DESELECT')",
 "bpy.ops.object.mode_set(mode = 'OBJECT')" };
 
-vector<string> object_smooth = { "#Smooth the surface",
-"bpy.ops.object.quadriflow_remesh()",
+vector<string> object_smooth = { 
 "obj.select_set(True)",
 "obj.data.use_auto_smooth = 1",
 "obj.data.auto_smooth_angle = math.pi / 6",
@@ -39,9 +44,10 @@ vector<string> object_smooth = { "#Smooth the surface",
 
 vector<string> prepare_mesh = { "#Prepare the mesh for matereial addition",
 "bpy.ops.mesh.uv_texture_add()",
+"#Add Subdivision modifier",
 "bpy.ops.object.modifier_add(type = 'SUBSURF')",
-"obj.modifiers['Subdivision'].levels = 5",
-"obj.modifiers['Subdivision'].render_levels = 5"};
+"obj.modifiers['Subdivision'].levels = 3",
+"obj.modifiers['Subdivision'].render_levels = 3"};
 
 vector<string> add_material = { "#Add the material",
 "mat = bpy.data.materials.new('prokaryote_material')",
@@ -56,12 +62,7 @@ vector<string> set_nodes = { "#Get the current nodesand links of the added mater
 "base_node = nodes.get('Principled BSDF')",
 "material_output = nodes.get('Material Output')" };
 
-vector<string> additional_nodes = { "# Add displacement converter",
-"converter = nodes.new('ShaderNodeDisplacement')",
-"converter.location = (120, -400)",
-"converter.label = 'Displacement convert'",
-"converter.inputs[1].default_value = 0",
-"converter.inputs[2].default_value = 0.020",
+vector<string> additional_nodes = { 
 "# Add textue coordinate node",
 "texture_coordinate = nodes.new('ShaderNodeTexCoord')",
 "texture_coordinate.location = (-1100, 100)",
@@ -75,12 +76,11 @@ vector<string> link_nodes = { "#Link the mapping to all input nodes",
 "links.new(texture_coordinate.outputs[2], mapping.inputs[0])",
 "links.new(mapping.outputs[0], base_color.inputs[0])",
 "links.new(mapping.outputs[0], roughness.inputs[0])",
-"links.new(mapping.outputs[0], displacement.inputs[0])",
 "#Link the individual nodes",
 "links.new(base_color.outputs[0], base_node.inputs[0])",
-"links.new(roughness.outputs[0], base_node.inputs[9])",
-"links.new(displacement.outputs[0], converter.inputs[0])",
-"links.new(converter.outputs[0], material_output.inputs[2])" };
+"links.new(roughness.outputs[0], base_node.inputs[9])" };
+
+
 
 string point_cloud_comment = "#Create the collection of points, lines and planes";
 string point_cloud = "pc = point_cloud(";
@@ -121,7 +121,7 @@ vector<string> CreateShaderNode(int x, int y, string name, string path)
 	return { comment, node, location, label, image };
 }
 
-void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, string file_name, int dimensions, int r_color, int g_color, int b_color) 
+void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, string file_name, double displace, double resolution, bool quadriflow, string displace_type, int dimensions, int r_color, int g_color, int b_color)
 {
 	ofstream blender_file(file_name);
 
@@ -156,72 +156,6 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 		counter += assembly.elipses[i]->points.size();
 	}
 	object_creation += "], [";
-	
-	counter = 0;
-	double closest_distance;
-	int closest;
-	int closest_next;
-	int closestt;
-	double distance;
-	
-	for (int i = 0; i < assembly.elipses.size() - 1; i++)
-	{
-		closest_distance = 1e10;
-		closest = 0;
-
-		if (i == 0){
-			object_creation += "(";
-			for (int s = 0; s < assembly.elipses[i]->points.size(); s++) 
-			{
-				object_creation += to_string(s) + ", ";
-			}
-			object_creation += "), ";
-		}
-
-		for (int j = 0; j < assembly.elipses[i + 1]->lines.size(); j++) 
-		{
-			distance = Distance(assembly.elipses[i]->points[0], assembly.elipses[i + 1]->points[j]);
-			if (distance < closest_distance) { closest_distance = distance; closest = j; }
-
-		}
-		
-		closestt = closest;
-		if (Distance(assembly.elipses[i]->points[1], assembly.elipses[i + 1]->points[ChoosePosition(assembly.elipses[i + 1]->points.size(), closest + 1)]) <=
-			Distance(assembly.elipses[i]->points[1], assembly.elipses[i + 1]->points[ChoosePosition(assembly.elipses[i + 1]->points.size(), closest - 1)])) {
-			if (closest == assembly.elipses[i + 1]->points.size() - 1) {closest_next = 0;}
-			else { closest_next = closest + 1; }
-			for (int k = 0; k < assembly.elipses[i]->points.size(); k++)
-			{
-				if (closest == assembly.elipses[i + 1]->points.size()) (closest = 0);
-				if (closest == assembly.elipses[i + 1]->points.size() - 1) (closest_next = 0);
-				object_creation += "(" + to_string(assembly.elipses[i]->lines[k][0] + counter) + ", " + to_string(assembly.elipses[i]->lines[k][1] + counter) + ", " + to_string(closest_next + counter + assembly.elipses[i]->points.size()) + ", " + to_string(closest + counter + assembly.elipses[i]->points.size()) + "), ";
-				closest++;
-				closest_next++;
-			}
-		}
-		else {
-			if (closest == 0) (closest_next = assembly.elipses[i + 1]->points.size() - 1);
-			else (closest_next = closest - 1);
-			for (int k = 0; k < assembly.elipses[i]->points.size(); k++)
-			{
-				if (closest == -1) (closest = assembly.elipses[i + 1]->points.size() - 1);
-				if (closest == 0) (closest_next = assembly.elipses[i + 1]->points.size() - 1);
-				object_creation += "(" + to_string(assembly.elipses[i]->lines[k][0] + counter) + ", " + to_string(assembly.elipses[i]->lines[k][1] + counter) + ", " + to_string(closest_next + counter + assembly.elipses[i]->points.size()) + ", " + to_string(closest + counter + assembly.elipses[i]->points.size()) + "), ";
-				closest--;
-				closest_next--;
-			}
-		}
-		
-		counter += assembly.elipses[i]->points.size();
-
-	}
-
-	object_creation += "(";
-	for (int s = 0; s < assembly.elipses[assembly.elipses.size()-1]->points.size(); s++)
-	{
-		object_creation += to_string(s+counter) + ", ";
-	}
-	object_creation += ") ";
 
 	object_creation += "])";
 
@@ -232,21 +166,38 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 	for (string line : select_object) { blender_file << line + "\n"; }
 	blender_file << "\n";
 
+	blender_file << "#Connect individual elipses" << "\n";
+	blender_file << "counter = 0" << "\n";
+	string for_loop_1 = "for i in range(0, " + to_string(assembly.elipses.size()-1) + "):";
+	blender_file << for_loop_1 << "\n";
+	blender_file << "	for j in range(counter," << 2*resolution << " + counter):" << "\n";
+	blender_file << "		obj.data.edges[j].select = True" << "\n";
+	blender_file << "	counter += " << resolution << "\n";
+	for (string line : connect_elipses) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
+	for (string line : select_object) { blender_file << line + "\n"; }
+	blender_file << "\n";
+
 	blender_file << "#Select all points on one side of cap and merge them" << "\n";
-	string for_loop = "for i in range(0, " + to_string(assembly.elipses[0]->points.size())  +"):";
-	blender_file << for_loop + "\n";
+	string for_loop_2 = "for i in range(0, " + to_string(assembly.elipses[0]->points.size())  +"):";
+	blender_file << for_loop_2 + "\n";
 	blender_file << "    obj.data.vertices[i].select = True" + std::string("\n");
 
 	for (string line : vertices_merge) { blender_file << line + "\n"; }
 	blender_file << "\n";
 
 	blender_file << "#Select all points on the other side and merge them" << "\n";
-	for_loop = "for i in range(" + to_string(assembly.elipses.size() * assembly.elipses[assembly.elipses.size() - 1]->points.size() - assembly.elipses[0]->points.size() - 59) + "," + to_string(assembly.elipses.size() * assembly.elipses[assembly.elipses.size() - 1]->points.size() - 59) + "):";
-	blender_file << for_loop + "\n";
+	for_loop_2 = "for i in range(" + to_string(int(assembly.elipses.size() * assembly.elipses[assembly.elipses.size() - 1]->points.size() - assembly.elipses[0]->points.size() - resolution + 1)) + "," + to_string(int(assembly.elipses.size() * assembly.elipses[assembly.elipses.size() - 1]->points.size() - resolution + 1)) + "):";
+	blender_file << for_loop_2 + "\n";
 	blender_file << "    obj.data.vertices[i].select = True" + std::string("\n");
 
 	for (string line : vertices_merge) { blender_file << line + "\n"; }
 	blender_file << "\n";
+
+	blender_file << "#Smooth the surface" << "\n";
+	blender_file << "bpy.ops.object.voxel_remesh()" << "\n";
+	if (quadriflow == true) { blender_file << "bpy.ops.object.quadriflow_remesh()" << "\n"; }
 
 	for (string line : object_smooth) { blender_file << line + "\n"; }
 	blender_file << "\n";
@@ -257,9 +208,9 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 	std::string current_directory(wstr.begin(), wstr.end());
 	current_directory.erase(current_directory.length() - 9);
 
-	remove((current_directory + (string)"\\TestingMath\\MaterialCreation\\generated_maps\\base_color_map.jpg").c_str());
-	remove((current_directory + (string)"\\TestingMath\\MaterialCreation\\generated_maps\\roughness_map.jpg").c_str());
-	remove((current_directory + (string)"\\TestingMath\\MaterialCreation\\generated_maps\\displacement_map.jpg").c_str());
+	std::remove((current_directory + (string)"\\TestingMath\\MaterialCreation\\generated_maps\\base_color_map.jpg").c_str());
+	std::remove((current_directory + (string)"\\TestingMath\\MaterialCreation\\generated_maps\\roughness_map.jpg").c_str());
+	std::remove((current_directory + (string)"\\TestingMath\\MaterialCreation\\generated_maps\\displacement_map.jpg").c_str());
 
 	//System Path
 	string displacement = (string)"cd " + current_directory + (string)"\\TestingMath\\MaterialCreation && python3 displacement.py " + to_string(dimensions);
@@ -272,11 +223,26 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 	const char* pointer_roughness = (roughness).c_str(); 
 	const char* pointer_base_color = (base_color).c_str();
 	
-	system(pointer_displacement); system(pointer_roughness); system(pointer_base_color);
+	std::system(pointer_displacement); std::system(pointer_roughness); std::system(pointer_base_color);
 
 	//Prepare the blender for material addition
 	for (string line : prepare_mesh) { blender_file << line + "\n"; }
 	blender_file << "\n";
+
+	//Adding the displacement 
+	blender_file << "#Add Displace modifier" << "\n";
+	blender_file << "bpy.ops.object.modifier_add(type = 'DISPLACE')" << "\n";
+	blender_file << "obj.modifiers['Displace'].strength = " << displace << "\n";
+	blender_file << "obj.modifiers['Displace'].mid_level = 0.000" << "\n";
+	if (displace_type == "IMAGE") {
+		blender_file << "texture = bpy.data.textures.new('Image', 'IMAGE')" << "\n";
+		blender_file << "texture.image = bpy.data.images.load(" << current_directory + (string)"/TestingMath/MaterialCreation/generated_maps/displacement_map.jpg" << ")" << "\n";
+		blender_file << "obj.modifiers['Displace'].texture = bpy.data.textures['Image']" << "\n";
+	}
+	else if (displace_type == "CLOUDS") {
+		blender_file << "texture = bpy.data.textures.new('Cloud', 'CLOUDS')" << "\n";
+		blender_file << "obj.modifiers['Displace'].texture = bpy.data.textures['Cloud']" << "\n";
+	}
 
 	//Add the material
 	for (string line : add_material) { blender_file << line + "\n"; }
@@ -289,18 +255,13 @@ void ExportToBlender(ProkaryoteBodyContainer assembly, string export_path, strin
 	//Add the individual nodes
 	//base color
 	string base_color_path = current_directory + (string)"/TestingMath/MaterialCreation/generated_maps/base_color_map.jpg";
-	replace(base_color_path.begin(), base_color_path.end(), '\\', '/');
+	std::replace(base_color_path.begin(), base_color_path.end(), '\\', '/');
 	for (string line : CreateShaderNode(-600, 210, "base_color", base_color_path)) { blender_file << line + "\n"; }
 	blender_file << "\n";
 	//roughness
 	string roughness_path = current_directory + (string)"/TestingMath/MaterialCreation/generated_maps/roughness_map.jpg";
-	replace(roughness_path.begin(), roughness_path.end(), '\\', '/');
+	std::replace(roughness_path.begin(), roughness_path.end(), '\\', '/');
 	for (string line : CreateShaderNode(-600, -80, "roughness", roughness_path)) { blender_file << line + "\n"; }
-	blender_file << "\n";
-	//displacement
-	string displacement_path = current_directory + (string)"/TestingMath/MaterialCreation/generated_maps/displacement_map.jpg";
-	replace(displacement_path.begin(), displacement_path.end(), '\\', '/');
-	for (string line : CreateShaderNode(-600, -370, "displacement", displacement_path)) { blender_file << line + "\n"; }
 	blender_file << "\n";
 
 	for (string line : additional_nodes) { blender_file << line + "\n"; }
